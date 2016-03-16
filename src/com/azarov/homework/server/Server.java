@@ -44,11 +44,12 @@ public class Server {
         }
 
         public void run() {
-            System.out.println("");
+            System.out.println(socket.toString());
             PrintWriter out = null;
             try {
                 while (true) {
                     out = new PrintWriter(socket.getOutputStream(), true);
+                    out.println(new Date().toString());
                 }
             } catch (IOException e) {
                 System.out.println(e.getMessage());
@@ -60,7 +61,6 @@ public class Server {
                     System.out.println(e.getMessage());
                 }
             }
-            out.println(new Date().toString());
         }
     }
 
