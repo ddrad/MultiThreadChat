@@ -17,8 +17,8 @@ public class Client {
 
         String serverAddress = getServerAddress();
         File directory = getSelectedDirectory();
-        String downloadFileName = null;
-        byte[] fileSize = null;
+        String downloadFileName;
+        byte[] fileSize;
         Socket socket = new Socket(serverAddress, 9090);
 
         while (true) {
