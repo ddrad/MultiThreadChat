@@ -4,91 +4,129 @@ import javax.swing.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by AzarovD on 16.03.2016.
  */
+
 public class Server {
 
-    public static void main(String[] args) throws IOException {
+    private void StartServer() throws IOException {
 
         ServerSocket listener = new ServerSocket(9090);
-
         File store = getSelectedDirectory();
+        StringBuffer filesName = getAllFilesInDirectory(store);
 
         try {
             while (true) {
-
-                try {
-                    while (true) {
-                        new Handler(listener.accept(), store).start();
-                    }
-                } finally {
-                    listener.close();
-                }
+                new Handler(listener.accept(), store, filesName).start();
             }
-        }
-        finally {
+        } finally {
             listener.close();
         }
     }
 
-    private static File getSelectedDirectory() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setCurrentDirectory(new File("."));
-        chooser.setDialogTitle("choosertitle");
-        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        chooser.setAcceptAllFileFilterUsed(false);
+    private File getSelectedDirectory() {
+        JFileChooser chooser = createJFileChooser();
 
         if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-            System.out.println("getCurrentDirectory(): " + chooser.getCurrentDirectory());
-            System.out.println("getSelectedFile() : " + chooser.getSelectedFile());
+            System.out.println("Selected : " + chooser.getSelectedFile());
         } else {
             System.out.println("No Selection ");
         }
-
         return chooser.getSelectedFile();
     }
 
-    private static class Handler extends Thread {
+    private JFileChooser createJFileChooser() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+        chooser.setDialogTitle("Enter directory from whence you want upload file:");
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        chooser.setAcceptAllFileFilterUsed(false);
+        return chooser;
+    }
+
+    private StringBuffer getAllFilesInDirectory(File store) {
+       StringBuffer stringBuffer = new StringBuffer();
+        File[] files = store.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.isFile();
+            }
+        });
+
+         for(File file : files){
+             stringBuffer.append(file.getName()).append("|");
+         }
+        return stringBuffer;
+    }
+
+    private class Handler extends Thread {
 
         private Socket socket;
+        File store;
+        StringBuffer filesName;
 
-        public Handler(Socket socket, File store) {
+        public Handler(Socket socket, File store,StringBuffer filesName) {
             this.socket = socket;
+            this.store = store;
+            this.filesName = filesName;
         }
 
         public void run() {
-
-            System.out.println(socket.toString());
-            PrintWriter out = null;
-            File file = new File("D:\\Workspace\\Projects\\TradeView\\Task_Java_2.doc");
-            FileInputStream fileInputStream = null;
             BufferedInputStream bufferedInputStream = null;
-            OutputStream outputStream = null;
-
             BufferedOutputStream bufferedOutputStream = null;
+            PrintWriter writer = null;
+            BufferedReader reader = null;
+            byte[] byteArray = null;
+            final String fileName;
 
             try {
-                bufferedInputStream = new BufferedInputStream(new FileInputStream(file));
-                byte [] byteArray  = new byte [(int)file.length()];
+                while (true) {
+                    writer = new PrintWriter(socket.getOutputStream(), true);
+                    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    writer.println(filesName);
+                    fileName = reader.readLine();
 
-                bufferedInputStream.read(byteArray,0,byteArray.length); // copied file into byteArray
+                    if (fileName == null) {
+                        return;
+                    }
+                    break;
+                }
 
-                //sending file through socket
-                bufferedOutputStream = new BufferedOutputStream(socket.getOutputStream());
-                System.out.println("Sending " + file.getName() + "( size: " + byteArray.length + " bytes)");
-                bufferedOutputStream.write(byteArray,0,byteArray.length);
-                bufferedOutputStream.flush();
-                System.out.println("Done.");
+                while (true) {
+
+                    bufferedOutputStream = new BufferedOutputStream(socket.getOutputStream());
+
+                    File[] files = store.listFiles(new FilenameFilter() {
+                        @Override
+                        public boolean accept(File dir, String name) {
+                            return name.equals(fileName);
+                        }
+                    });
+
+                    bufferedInputStream = new BufferedInputStream(new FileInputStream(files[0]));
+
+                    byteArray = new byte[(int) files[0].length()];
+
+                    bufferedInputStream.read(byteArray, 0, byteArray.length);
+
+                    System.out.println("Sending " + files[0].getName() + "( size: " + byteArray.length + " bytes)");
+
+                    bufferedOutputStream.write(byteArray, 0, byteArray.length);
+                    bufferedOutputStream.flush();
+                    System.out.println("Done.");
+                    break;
+                }
 
             } catch (IOException e) {
                 System.out.println(e.getMessage());
-            }
-            finally {
+            } finally {
                 try {
-                    bufferedInputStream.close();
-                    bufferedOutputStream.close();
+                    if (bufferedInputStream != null) bufferedInputStream.close();
+                    if (bufferedOutputStream != null) bufferedOutputStream.close();
                     socket.close();
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
@@ -96,6 +134,11 @@ public class Server {
             }
         }
     }
+
+    public static void main(String[] args) throws IOException {
+        new Server().StartServer();
+    }
+
 
 }
 
