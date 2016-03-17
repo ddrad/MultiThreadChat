@@ -1,0 +1,41 @@
+<project name="TradeViewHomework" default="all">
+
+    <description>This is my first project which uses ant</description>
+
+    <target name="all" description="Do the build"  depends="create_jar"/>
+    <target name="create_jar" description="make jar file" depends="compile">
+        <jar destfile="build/tradeViewHomework.jar">
+            <fileset dir="build/production">
+                <include name="**/*.class"/>
+            </fileset>
+        </jar>
+    </target>
+    <target name="compile" description="compile java"  depends="make_dirs">
+        <javac destdir="build/production">
+            <src path="src"/>
+        </javac>
+    </target>
+    <target name="make_dirs" description="Make a dir">
+        <mkdir dir="build"/>
+        <mkdir dir="build/production"/>
+    </target>
+    <target name="clean" description="clean up">
+        <echo>I'm cleaning up.</echo>
+        <delete dir="build"/>
+    </target>
+    <target name="server_start" description="start server">
+        <java classname="com.azarov.homework.server.Server">
+            <classpath>
+                <pathelement location="build/tradeViewHomework.jar"/>
+            </classpath>
+        </java>
+    </target>
+    <target name="client_start" description="start client">
+        <java classname="com.azarov.homework.client.Client">
+            <classpath>
+                <pathelement location="build/tradeViewHomework.jar"/>
+            </classpath>
+        </java>
+    </target>
+
+</project>

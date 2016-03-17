@@ -4,14 +4,14 @@ import javax.swing.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by AzarovD on 16.03.2016.
  */
 
 public class Server {
+
+    private static final File USER_HOME = new File(System.getProperty("user.home"));
 
     private void StartServer() throws IOException {
 
@@ -32,16 +32,18 @@ public class Server {
         JFileChooser chooser = createJFileChooser();
 
         if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-            System.out.println("Selected : " + chooser.getSelectedFile());
+            System.out.println("Store : " + chooser.getSelectedFile());
         } else {
-            System.out.println("No Selection ");
+            JOptionPane.showMessageDialog(new JFrame(), "You didn't select upload directory\n" +
+                    "Default directory will 'user home'");
+            return USER_HOME;
         }
         return chooser.getSelectedFile();
     }
 
     private JFileChooser createJFileChooser() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+        chooser.setCurrentDirectory(USER_HOME);
         chooser.setDialogTitle("Enter directory from whence you want upload file:");
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         chooser.setAcceptAllFileFilterUsed(false);
@@ -49,7 +51,7 @@ public class Server {
     }
 
     private StringBuffer getAllFilesInDirectory(File store) {
-       StringBuffer stringBuffer = new StringBuffer();
+        StringBuffer stringBuffer = new StringBuffer();
         File[] files = store.listFiles(new FileFilter() {
             @Override
             public boolean accept(File pathname) {
@@ -57,19 +59,19 @@ public class Server {
             }
         });
 
-         for(File file : files){
-             stringBuffer.append(file.getName()).append("|");
-         }
+        for (File file : files) {
+            stringBuffer.append(file.getName()).append(" ( ").append(file.length()).append(" )").append("|");
+        }
         return stringBuffer;
     }
 
     private class Handler extends Thread {
 
         private Socket socket;
-        File store;
-        StringBuffer filesName;
+        private File store;
+        private StringBuffer filesName;
 
-        public Handler(Socket socket, File store,StringBuffer filesName) {
+        public Handler(Socket socket, File store, StringBuffer filesName) {
             this.socket = socket;
             this.store = store;
             this.filesName = filesName;
@@ -80,10 +82,11 @@ public class Server {
             BufferedOutputStream bufferedOutputStream = null;
             PrintWriter writer = null;
             BufferedReader reader = null;
-            byte[] byteArray = null;
+            byte[] byteArray;
             final String fileName;
 
             try {
+
                 while (true) {
                     writer = new PrintWriter(socket.getOutputStream(), true);
                     reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -108,13 +111,9 @@ public class Server {
                     });
 
                     bufferedInputStream = new BufferedInputStream(new FileInputStream(files[0]));
-
                     byteArray = new byte[(int) files[0].length()];
-
                     bufferedInputStream.read(byteArray, 0, byteArray.length);
-
                     System.out.println("Sending " + files[0].getName() + "( size: " + byteArray.length + " bytes)");
-
                     bufferedOutputStream.write(byteArray, 0, byteArray.length);
                     bufferedOutputStream.flush();
                     System.out.println("Done.");
@@ -127,7 +126,9 @@ public class Server {
                 try {
                     if (bufferedInputStream != null) bufferedInputStream.close();
                     if (bufferedOutputStream != null) bufferedOutputStream.close();
-                    socket.close();
+                    if (writer != null) writer.close();
+                    if (reader != null) reader.close();
+                    if (socket != null) socket.close();
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
                 }
@@ -138,7 +139,5 @@ public class Server {
     public static void main(String[] args) throws IOException {
         new Server().StartServer();
     }
-
-
 }
 
