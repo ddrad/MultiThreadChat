@@ -1,4 +1,4 @@
-package com.azarov.homework.client;
+package com.azarov.projects.intervew.job.tradingview.client;
 
 import java.io.*;
 import java.net.Socket;

@@ -24,14 +24,14 @@
         <delete dir="build"/>
     </target>
     <target name="server_start" description="start server">
-        <java classname="com.azarov.homework.server.Server">
+        <java classname="com.azarov.projects.intervew.job.tradingview.server.Server">
             <classpath>
                 <pathelement location="build/tradeViewHomework.jar"/>
             </classpath>
         </java>
     </target>
     <target name="client_start" description="start client">
-        <java classname="com.azarov.homework.client.Client">
+        <java classname="com.azarov.projects.intervew.job.tradingview.client.Client">
             <classpath>
                 <pathelement location="build/tradeViewHomework.jar"/>
             </classpath>

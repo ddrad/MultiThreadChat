@@ -1,4 +1,4 @@
-package com.azarov.homework.server;
+package com.azarov.projects.intervew.job.tradingview.server;
 
 import javax.swing.*;
 import java.io.*;
